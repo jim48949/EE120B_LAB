@@ -32,22 +32,16 @@ int main(void) {
 		// 2) Perform computation			
 		// If total weight exceeds 140 (0x8C)
 		sum = tmpA+tmpB+tmpC;
-		if(sum>=0x8C)
-			tmpD = tmpD | 0x01;
+		if(sum>0x8C)
+			tmpD = 0x01;
 		// If |(A-C)| > 80 (0x50)
-		if(tmpA > tmpC)
-		{
-			if((tmpA-tmpC) > 0x50)
+		if((tmpA-tmpC) > 0x50)
 				tmpD = tmpD | 0x02;
-		}
-		else if(tmpA < tmpC)
-		{
-			if((tmpC-tmpA) > 0x50)
+		else if((tmpC-tmpA) > 0x50)
 				tmpD = tmpD | 0x02;
-		}
 		// Display the most significant 6 bits on D7-D2
 		// Max 255*3 = 765 (0x2FD) < 0x300 (768)
-		tmpD = tmpD | (sum>>2);			
+		tmpD = tmpD | ((sum>>2) & 0xFC);			
 		// 3) Write output
 		PORTD = tmpD;	
 	}
