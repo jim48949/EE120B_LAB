@@ -15,54 +15,61 @@
 enum States{SM_Init, S0_Start, S1_A2P, S2_A2R, S3_UNLOCK, S4_LOCK} State;
 
 unsigned char tmpA; // Temporary variable to hold the value of A
-unsigned char tmpC; // Temporary variable to hold the value of C
 unsigned char tmpB; // Temporary variable to hold the value of B
+unsigned char tmpA1;
+unsigned char tmpA2;
+unsigned char tmpA7;
 
 unsigned char SM()
 {	
+	tmpA1 = tmpA & 0x02;
+	tmpA2 = tmpA & 0x04;
+	tmpA7 = tmpA & 0x80;
 	switch(State)
 	{
 		case SM_Init:
 			State = S0_Start;
 			break;
 		case S0_Start:
-			tmpC = 0;
-			if(tmpA == 0x04)
+			if(tmpA2)
 				State = S1_A2P;
-			else if(tmpA == 0x80)
+			else if(tmpA7)
+			{
+				tmpB = 0x00;				
 				State = S4_LOCK;
+			}
 			else
 				State = S0_Start;
 			break;
 		case S1_A2P:
-			tmpC = 1;
-			if(tmpA == 0x04)				
+			if(tmpA2 && !tmpA1)				
 				State = S1_A2P;
-			else if(tmpA == 0x00)
+			else if(!tmpA2 && !tmpA1)
 				State = S2_A2R;
+			else
+				State = S0_Start;
 			break;
 		case S2_A2R:
-			tmpC = 2;
-			if(tmpA == 0x02)
+			if(tmpA1 && !tmpA2)
 			{			
 				tmpB = 0x01;				
 				State = S3_UNLOCK;
 			}
+			else if(!tmpA1 && !tmpA2 && !tmpA7)
+				State = S2_A2R;
 			else
 				State =	S0_Start;
 			break;
 		case S3_UNLOCK:
-			tmpC = 3;
 			tmpB = 0x01;
-			if(tmpA == 0x02)
+			if(tmpA1 && !tmpA2)
 				State = S3_UNLOCK;
 			else
 				State =	S0_Start;
 			break;
 		case S4_LOCK:
-			tmpC = 4;
 			tmpB = 0x00;
-			if(tmpA == 0x80)
+			if(tmpA7)
 				State = S4_LOCK;
 			else
 				State =	S0_Start;
@@ -77,16 +84,14 @@ int main(void) {
     	/* Insert DDR and PORT initializations */
 	DDRA = 0x00; PORTA = 0x00; // Port A's 8 pins as inputs
 	DDRB = 0xFF; PORTB = 0x00; // Port B's 8 pins as outputs
-	DDRC = 0xFF; PORTC = 0x00; // Port C's 8 pins as outputs
-	tmpC = 0x00; tmpA = 0x00; tmpB = 0x00;
+ 	tmpA = 0x00; tmpB = 0x00;
 	State = SM_Init;	
 	
     	/* Insert your solution below */
     	while (1) 
 	{
-		tmpA = PINA;	
+		tmpA = PINA & 0x87;	
 		PORTB = SM();
-		PORTC = tmpC;	
     	}
     	return 1;
 }
