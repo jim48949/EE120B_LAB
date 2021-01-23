@@ -43,7 +43,7 @@ unsigned char SM()
 			break;
 		case S2_A2R:
 			tmpC = 2;
-			if(tmpA==0x02)
+			if(tmpA == 0x02)
 			{			
 				tmpB = 0x01;				
 				State = S3_UNLOCK;
@@ -90,3 +90,4 @@ int main(void) {
     	}
     	return 1;
 }
+
