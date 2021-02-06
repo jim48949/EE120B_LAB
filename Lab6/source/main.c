@@ -1,14 +1,14 @@
 /*	Author: lab
  *  Partner(s) Name: Jim Poon
  *	Lab Section:
- *	Assignment: Lab #6  Exercise #3
+ *	Assignment: Lab #6  Exercise #1
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  *	
  *	Demo Link: 
- *
+ *	https://drive.google.com/file/d/1z7IZC_aVVpEqGf4NMjfbSmVeTibo5XFb/view?usp=sharing
  */
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -17,116 +17,43 @@
 #include "timer.h"
 #endif
 
-enum States{SM_Init, SM_Start, SM_A0, SM_A1, SM_RESET} State;
+enum States{Start, s0, s1, s2} State;
 
-unsigned char tmpA; // Temporary variable to hold the value of A
-unsigned char tmpB; // Temporary variable to hold the value of B
-unsigned char counter;
-unsigned char Tick()
-{		
-	switch(State)
-	{
-		case SM_Init:
-			State = SM_Start;
-			tmpB = 0x07;
+unsigned char tmpB = 0x00;
+
+void Tick()
+{
+	switch(State){
+		case Start:
+			State = s0;
+			tmpB = 0x01;
 			break;
-		case SM_Start:
-			if(tmpA == 0x03)
-				State = SM_RESET;
-			else if(tmpA == 0x01)
-			{	
-				if(tmpB < 0x09)
-				{
-					tmpB++;
-					State = SM_A0;	
-				}
-				else
-					State = SM_A0;
-			}	
-			else if(tmpA == 0x02)
-			{
-				if(tmpB > 0x00)	
-				{			
-					tmpB--;
-					State = SM_A1;
-				}
-				else
-					State = SM_A1;
-			}
-			else if (tmpA == 0x03)
-				State = SM_RESET;
+		case s0:
+			State = s1;
+			tmpB = 0x02;
 			break;
-		case SM_A0:
-			if(tmpA == 0x01)
-			{	
-				if(counter == 10)
-				{				
-					if(tmpB < 0x09)
-					{
-						tmpB++;
-						State = SM_A0;	
-					}
-					else
-						State = SM_A0;
-					counter = 0;
-				}
-				else
-					counter++; 
-			}
-			else if( (tmpA|0x02) == 0x03)
-			{
-				tmpB = 0x00;
-				State = SM_RESET;
-			}
-			else
-				State = SM_Start;	
+		case s1:
+			State = s2;
+			tmpB = 0x04;
 			break;
-		case SM_A1:
-			if(tmpA == 0x02)
-			{
-				if(counter == 10)
-				{				
-					if(tmpB > 0x00)	
-					{			
-						tmpB--;
-						State = SM_A1;
-					}
-					else
-						State = SM_A1;
-					counter = 0;
-				}
-				else
-					counter++; 
-			}
-			else if( (tmpA|0x01) == 0x03)
-			{
-				tmpB = 0x00;
-				State = SM_RESET;
-			}
-			else
-				State = SM_Start;	
-			break;
-		case SM_RESET:
-			tmpB = 0x00;
-			State = SM_Start;
+		case s2:
+			State = s0;
+			tmpB = 0x01;
 			break;
 		default:
-			State = SM_Init;
+			State = Start;
 	}
-	return tmpB;
+	PORTB = tmpB;
 }
 
 int main(void) {
-	DDRA = 0x00; PORTA = 0xFF; // Port A's 8 pins as inputs
-	DDRB = 0xFF; PORTB = 0x00; // Port B's 8 pins as outputs
-	tmpB = 0x00; tmpA = 0x00;
-	counter = 0;	
-	State = SM_Init;
-	TimerSet(100);
+	DDRB = 0xFF;
+	PORTB = 0x00;
+	TimerSet(1000);
 	TimerOn();
+	tmpB = 0x00;
 	while (1) {
-		tmpA = ~PINA & 0x03;	
-		PORTB = Tick();
+		Tick();
 		while(!TimerFlag);
 		TimerFlag = 0;
 	    }
