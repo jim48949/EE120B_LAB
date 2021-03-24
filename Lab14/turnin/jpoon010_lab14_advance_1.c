@@ -1,24 +1,48 @@
 /*	Author: lab
+
  *  	Partner(s) Name: Jim Poon
+
  *	Lab Section:
+
  *	Assignment: Lab #14  Exercise Advancement 1
+
  *	Exercise Description: [optional - include for your own benefit]
+
  *
+
  *	I acknowledge all content contained herein, excluding template or example
+
  *	code, is my own original work.
+
  *	Demo Link: 
+
  *	
+
  *
+
  */
 
+
+
 #include <avr/io.h>
+
 #include "timer.h"
+
 #include "scheduler.h"
+
 #include "stdlib.h"
+
 #include "time.h"
+
 #ifdef _SIMULATE_
+
 #include "simAVRHeader.h"
+
 #endif
+
+
+
+
 
 
 
@@ -53,6 +77,10 @@ void transmit_data(unsigned char data) {
     PORTC = 0x00;
 
 }
+
+
+
+
 
 
 
@@ -94,6 +122,8 @@ unsigned char findX(unsigned char PL)
 
 // Share vars
 
+
+
 unsigned char pattern;
 
 unsigned char row;
@@ -109,10 +139,13 @@ unsigned char Bline, Brow;
 unsigned char CLeft, CRight;
 
 unsigned char P1Score, P2Score;
-unsigned char P1Moving, P2Moving, CSPD, SPIN;
+
+unsigned char P1Moving, P2Moving, SPIN, CSPD;
+
 unsigned char newRound;
 
 unsigned char direc;
+
 unsigned char P1WIN, P2WIN;
 
 
@@ -122,6 +155,8 @@ enum P1States {P1INIT, P1WAIT, P1HOLD};
 unsigned char A0 = 0, A1 = 0;
 
 unsigned char P1line;  
+
+
 
 int P1(int state) 
 
@@ -138,8 +173,11 @@ int P1(int state)
 		case P1INIT:
 
 			P1Y = 0x01; P1X = 0xF1;
+
 			P1line = 2;
+
 			P1Moving = 0;
+
 			state = P1WAIT;
 
 			break;
@@ -153,8 +191,11 @@ int P1(int state)
 			{ 
 
 				P1X = (P1X << 1) | 0x01;
+
 				P1line++;
+
 				P1Moving = 1;
+
 				//state = P1HOLD;
 
 			} 
@@ -164,15 +205,23 @@ int P1(int state)
 			{ 
 
 				P1X = (P1X >> 1) | 0x80;
+
 				P1line--;
+
 				P1Moving = 1;
+
 				//state = P1HOLD;
 
 			} 
+
 			else
+
 			{
+
 				P1Moving = 0;
+
 			}
+
 
 
 			if(newRound)
@@ -203,9 +252,19 @@ int P1(int state)
 
 	}
 
+
+
         return state;
 
+
+
 }
+
+
+
+
+
+
 
 
 
@@ -215,7 +274,9 @@ enum BOTStates {BOTINIT, BOTGUESS};
 
 unsigned char P2line;
 
-unsigned randNum;
+unsigned char randNum;
+
+
 
 int BOT(int state)
 
@@ -228,42 +289,64 @@ int BOT(int state)
 		case BOTINIT:
 
 			P2Y = 0x80; P2X = 0xF1;
+
 			P2line = 2;
+
 			P2Moving = 0;
+
 			state = BOTGUESS;
 
 			break;
 
 		case BOTGUESS:
 
-			if(Brow == 6 && direc)
+			if(Brow >= 6 && direc)
 
 			{
 
-				if(randNum > 3) // 60%
+				if(randNum > 4) // 60%
 
 				{
+
 					P2Moving = 0;
-					if(P2line < BX && P2line > 1)
+
+					if(P2line > Bline && P2line > 1)
+
 					{
+
 						P2X = (P2X >> 1) | 0x80;
+
 						P2line--;
+
 						P2Moving = 1;
+
 					}
-					else if(P2line >= BX && P2line < 3)
+
+					else if(P2line < Bline && P2line < 3)
+
 					{
+
 						P2X = (P2X << 1) | 0x01;
+
 						P2line++;
+
 						P2Moving = 1;
+
 					}
+
 				}
+
 				else
+
 				{
+
 					P2Moving = 0;
+
 				}
+
 			}
 
-			
+
 
 			if(newRound)
 
@@ -281,7 +364,7 @@ int BOT(int state)
 
 	}
 
-	return state;	
+	return state;
 
 }
 
@@ -291,10 +374,13 @@ int BOT(int state)
 
 enum BStates {BINIT, BUPDATE, BEND}BState;
 
+
+
 unsigned char CP1[3], CP2[3];
 
 unsigned char SCORED;
-unsigned char A3;
+
+unsigned char A2, A3;
 
 
 
@@ -313,9 +399,12 @@ int Ball(int state)
 	CP2[1] = (CP2[0] << 1) | 0x01;
 
 	CP2[2] = (CP2[1] << 1) | 0x01;
+
 	A3 = ~PINA & 0x08;
 
-	
+	A2 = ~PINA & 0x04;
+
+
 
 	switch(state)
 
@@ -324,15 +413,30 @@ int Ball(int state)
 		case BINIT:
 
 			BX = 0xFB;
+
 			BY = 0x02;
+
 			direc = 1; // UP
+
 			CLeft = 0; CRight = 0;
+
 			Bline = 3; Brow = 2;
+
 			SCORED = 0;
-			newRound = 0;
+
 			CSPD = 0;
+
+			newRound = 0;
+
 			SPIN = 0;
-			state = BUPDATE;
+
+			if(A2)
+
+				state = BUPDATE;
+
+			else
+
+				state = BINIT;
 
 			break;
 
@@ -355,17 +459,44 @@ int Ball(int state)
 						{
 
 							BX = (BX << 1) | 0x01;
+
 							Bline++;
 
+
+
 							if(SPIN && Bline < 5)
+
 							{
+
 								BX = (BX << 1) | 0x01;
+
 								Bline++;
+
 							}
+
 							BY = BY << 1;
+
 							Brow++;
+
+							if(CSPD && Brow < 7)
+
+							{
+
+								BY = BY << 1;
+
+								Brow++;
+
+							}
+
+							else
+
+								CSPD = 0;
+
 							CLeft = 1;
+
 							CRight = 0;
+
+
 
 						}						
 
@@ -385,7 +516,23 @@ int Ball(int state)
 
 							Brow++;
 
+							if(CSPD && Brow < 7)
+
+							{
+
+								BY = BY << 1;
+
+								Brow++;
+
+							}
+
+							else
+
+								CSPD = 0;
+
 						}
+
+
 
 					}
 
@@ -398,7 +545,7 @@ int Ball(int state)
 						{
 
 							// Hit Right
-							
+
 							if(Bline > 1) // Go Right
 
 							{
@@ -427,54 +574,104 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
+
+
 
 						else if(BX == CP2[1])
 
+
+
 						{
 
+
+
 							// Hit Center
+
 							if(!CLeft && !CRight) // Go Straight
+
 							{
+
 								CLeft = 0;
+
 								CRight = 0;
-							}
-							else if(CLeft && !CRight) // Go left
-							{
-								BX = (BX << 1) | 0x01;
-								Bline++;
-								CLeft = 1;
-								CRight = 0;
-							}
-							else if(!CLeft && CRight) // Go Right
-							{
-								BX = (BX >> 1) | 0x80;
-								Bline--;
-								CLeft = 0;
-								CRight = 1;
+
 							}
 
+							else if(CLeft && !CRight) // Go left
+
+							{
+
+								BX = (BX << 1) | 0x01;
+
+								Bline++;
+
+								CLeft = 1;
+
+								CRight = 0;
+
+							}
+
+							else if(!CLeft && CRight) // Go Right
+
+							{
+
+								BX = (BX >> 1) | 0x80;
+
+								Bline--;
+
+								CLeft = 0;
+
+								CRight = 1;
+
+							}
+
+
+
 							SCORED = 0;
+
 							CSPD = 0;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 								CSPD = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP2[2])
@@ -511,16 +708,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else
@@ -574,15 +783,26 @@ int Ball(int state)
 						{
 
 							BX = (BX >> 1) | 0x80;
+
 							Bline--;
 
-							if(SPIN && Bline < 5)
+
+
+							if(SPIN && Bline > 1)
+
 							{
+
 								BX = (BX >> 1) | 0x80;
+
 								Bline--;
+
 							}
+
 							CLeft = 0;
+
 							CRight = 1;
+
+
 
 						}						
 
@@ -603,6 +823,20 @@ int Ball(int state)
 						BY = BY << 1;
 
 						Brow++;
+
+						if(CSPD && Brow < 7)
+
+						{
+
+							BY = BY << 1;
+
+							Brow++;
+
+						}
+
+						else
+
+							CSPD = 0;
 
 					}
 
@@ -644,16 +878,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;	
+
 							CSPD = 1;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP2[1])
@@ -661,37 +907,69 @@ int Ball(int state)
 						{
 
 							// Hit Center
+
 							if(!CLeft && !CRight) // Go Straight
+
 							{
+
 								CLeft = 0;
+
 								CRight = 0;
-							}
-							else if(CLeft && !CRight) // Go left
-							{
-								BX = (BX << 1) | 0x01;
-								Bline++;
-								CLeft = 1;
-								CRight = 0;
-							}
-							else if(!CLeft && CRight) // Go Right
-							{
-								BX = (BX >> 1) | 0x80;
-								Bline--;
-								CLeft = 0;
-								CRight = 1;
+
 							}
 
+							else if(CLeft && !CRight) // Go left
+
+							{
+
+								BX = (BX << 1) | 0x01;
+
+								Bline++;
+
+								CLeft = 1;
+
+								CRight = 0;
+
+							}
+
+							else if(!CLeft && CRight) // Go Right
+
+							{
+
+								BX = (BX >> 1) | 0x80;
+
+								Bline--;
+
+								CLeft = 0;
+
+								CRight = 1;
+
+							}
+
+
+
 							SCORED = 0;
+
 							CSPD = 0;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 								CSPD = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP2[2])
@@ -728,16 +1006,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else
@@ -834,53 +1124,98 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;	
+
 							CSPD = 1;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
+
+
 
 						else if(BX == CP2[1])
 
 						{
 
 							// Hit Center
+
 							if(!CLeft && !CRight) // Go Straight
+
 							{
+
 								CLeft = 0;
+
 								CRight = 0;
+
 							}
+
 							else if(CLeft && !CRight) // Go left
+
 							{
+
 								BX = (BX << 1) | 0x01;
+
 								Bline++;
+
 								CLeft = 1;
+
 								CRight = 0;
+
 							}
+
 							else if(!CLeft && CRight) // Go Right
+
 							{
+
 								BX = (BX >> 1) | 0x80;
+
 								Bline--;
+
 								CLeft = 0;
+
 								CRight = 1;
+
 							}	
+
 							SCORED = 0;
+
 							CSPD = 0;
+
 							if(P2Moving && !CLeft && !CRight)
+
 							{
+
 								CSPD = 1;
+
 							}
+
 							else if(P2Moving && (CLeft || CRight))
+
 							{
+
 								SPIN = 1;
+
 								CSPD = 1;
+
 							}
+
 						}
 
 						else if(BX == CP2[2])
@@ -917,17 +1252,30 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P2Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
+
 						else
 
 						{
@@ -949,6 +1297,7 @@ int Ball(int state)
 							Brow--;
 
 						}
+
 						else
 
 						{
@@ -984,16 +1333,41 @@ int Ball(int state)
 						{
 
 							BX = (BX << 1) | 0x01;
+
 							Bline++;
 
+
+
 							if(SPIN && Bline < 5)
+
 							{
+
 								BX = (BX << 1) | 0x01;
+
 								Bline++;
+
 							}
+
 							BY = BY >> 1;
+
 							Brow--;
+
+							if(CSPD && Brow > 2)
+
+							{
+
+								BY = BY >> 1;
+
+								Brow--;
+
+							}
+
+							else
+
+								CSPD = 0;
+
 							CLeft = 1;
+
 							CRight = 0;
 
 						}						
@@ -1056,16 +1430,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP1[1])
@@ -1073,37 +1459,69 @@ int Ball(int state)
 						{
 
 							// Hit Center
+
 							if(!CLeft && !CRight) // Go Straight
+
 							{
+
 								CLeft = 0;
+
 								CRight = 0;
-							}
-							else if(CLeft && !CRight) // Go left
-							{
-								BX = (BX << 1) | 0x01;
-								Bline++;
-								CLeft = 1;
-								CRight = 0;
-							}
-							else if(!CLeft && CRight) // Go Right
-							{
-								BX = (BX >> 1) | 0x80;
-								Bline--;
-								CLeft = 0;
-								CRight = 1;
+
 							}
 
+							else if(CLeft && !CRight) // Go left
+
+							{
+
+								BX = (BX << 1) | 0x01;
+
+								Bline++;
+
+								CLeft = 1;
+
+								CRight = 0;
+
+							}
+
+							else if(!CLeft && CRight) // Go Right
+
+							{
+
+								BX = (BX >> 1) | 0x80;
+
+								Bline--;
+
+								CLeft = 0;
+
+								CRight = 1;
+
+							}
+
+
+
 							SCORED = 0;
+
 							CSPD = 0;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 								CSPD = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP1[2])
@@ -1140,16 +1558,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else
@@ -1201,14 +1631,23 @@ int Ball(int state)
 						{
 
 							BX = (BX >> 1) | 0x80;
+
 							Bline--;
 
-							if(SPIN && Bline < 5)
+
+
+							if(SPIN && Bline > 1)
+
 							{
+
 								BX = (BX >> 1) | 0x80;
+
 								Bline--;
+
 							}
+
 							CLeft = 0;
+
 							CRight = 1;
 
 						}						
@@ -1230,6 +1669,20 @@ int Ball(int state)
 						BY = BY >> 1;
 
 						Brow--;
+
+						if(CSPD && Brow > 2)
+
+						{
+
+							BY = BY >> 1;
+
+							Brow--;
+
+						}
+
+						else
+
+							CSPD = 0;
 
 					}
 
@@ -1271,16 +1724,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;	
+
 							CSPD = 1;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP1[1])
@@ -1288,37 +1753,69 @@ int Ball(int state)
 						{
 
 							// Hit Center
+
 							if(!CLeft && !CRight) // Go Straight
+
 							{
+
 								CLeft = 0;
+
 								CRight = 0;
-							}
-							else if(CLeft && !CRight) // Go left
-							{
-								BX = (BX << 1) | 0x01;
-								Bline++;
-								CLeft = 1;
-								CRight = 0;
-							}
-							else if(!CLeft && CRight) // Go Right
-							{
-								BX = (BX >> 1) | 0x80;
-								Bline--;
-								CLeft = 0;
-								CRight = 1;
+
 							}
 
+							else if(CLeft && !CRight) // Go left
+
+							{
+
+								BX = (BX << 1) | 0x01;
+
+								Bline++;
+
+								CLeft = 1;
+
+								CRight = 0;
+
+							}
+
+							else if(!CLeft && CRight) // Go Right
+
+							{
+
+								BX = (BX >> 1) | 0x80;
+
+								Bline--;
+
+								CLeft = 0;
+
+								CRight = 1;
+
+							}
+
+
+
 							SCORED = 0;
+
 							CSPD = 0;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 								CSPD = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP1[2])
@@ -1355,16 +1852,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else
@@ -1414,6 +1923,7 @@ int Ball(int state)
 					{
 
 						BY = BY >> 1;
+
 						Brow--;
 
 					}
@@ -1456,16 +1966,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;	
+
 							CSPD = 1;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else if(BX == CP1[1])
@@ -1473,37 +1995,69 @@ int Ball(int state)
 						{
 
 							// Hit Center
+
 							if(!CLeft && !CRight) // Go Straight
+
 							{
+
 								CLeft = 0;
+
 								CRight = 0;
-							}
-							else if(CLeft && !CRight) // Go left
-							{
-								BX = (BX << 1) | 0x01;
-								Bline++;
-								CLeft = 1;
-								CRight = 0;
-							}
-							else if(!CLeft && CRight) // Go Right
-							{
-								BX = (BX >> 1) | 0x80;
-								Bline--;
-								CLeft = 0;
-								CRight = 1;
+
 							}
 
+							else if(CLeft && !CRight) // Go left
+
+							{
+
+								BX = (BX << 1) | 0x01;
+
+								Bline++;
+
+								CLeft = 1;
+
+								CRight = 0;
+
+							}
+
+							else if(!CLeft && CRight) // Go Right
+
+							{
+
+								BX = (BX >> 1) | 0x80;
+
+								Bline--;
+
+								CLeft = 0;
+
+								CRight = 1;
+
+							}
+
+
+
 							SCORED = 0;
+
 							CSPD = 0;
+
 							if(P1Moving && !CLeft && !CRight)
+
 							{
+
 								CSPD = 1;
+
 							}
+
 							else if(P1Moving && (CLeft || CRight))
+
 							{
+
 								CSPD = 1;
+
 								SPIN = 1;
+
 							}
+
 						}
 
 						else if(BX == CP1[2])
@@ -1540,16 +2094,28 @@ int Ball(int state)
 
 							}
 
+
+
 							SCORED = 0;
+
 							CSPD = 1;
+
 							if(P1Moving)
+
 							{
+
 								SPIN = 1;
+
 							}
+
 							else
+
 							{
+
 								SPIN = 0;
+
 							}
+
 						}
 
 						else
@@ -1591,28 +2157,51 @@ int Ball(int state)
 				}	
 
 			}
-			
+
+		
+
 			if(P1WIN || P2WIN)
+
 			{
+
 				state = BEND;
+
 			}
 
+
+
 			break;
+
 		case BEND:
+
 			if(A3) // Reset
+
 			{
+
 				newRound = 1;
+
 				P1Score = 0;
+
 				P2Score = 0;
+
 				P1WIN = 0;
+
 				P2WIN = 0;
+
 				state = BINIT;
+
 			}
+
 			else
+
 			{
+
 				newRound = 0;
+
 				state = BEND;
+
 			}
+
 			break;
 
 		default:
@@ -1624,6 +2213,8 @@ int Ball(int state)
 	return state;
 
 }
+
+
 
 
 
@@ -1668,68 +2259,129 @@ int Output(int state)
 			outputX = BX;
 
 			state = OUT1;
+
 			if(P1Score == 3 && P2Score < 3)
+
 			{
+
 				P1WIN = 1;
+
 				P2WIN = 0;
+
 				i = 0;
+
 				state = WIN;
+
 			}
+
 			else if(P1Score < 3 && P2Score == 3)
+
 			{
+
 				P2WIN = 1;
+
 				P1WIN = 0;
+
 				i = 0;
+
 				state = WIN;
+
 			}		
 
 			break;
+
 		case WIN:
+
 			if(P1WIN)
+
 			{
+
 				if(i < 100)
+
 				{
+
 					i++;
+
 					outputY = 0x01;
+
 					outputX = 0xE0;
+
 				}
+
 				else
+
 				{
+
 					i = 0;
+
 					state = FLASH;
+
 				}
+
 			}
+
 			else if(P2WIN)
+
 			{
+
 				if(i < 100)
+
 				{
+
 					i++;
+
 					outputY = 0x80;
+
 					outputX = 0xE0;
+
 				}
+
 				else
+
 				{
+
 					i = 0;
+
 					state = FLASH;
+
 				}
+
 			}
+
 			else if(!P1WIN && !P2WIN && newRound)
+
 			{
+
 				state = OUT1;
+
 			}
+
 			break;
+
 		case FLASH:
+
 			if(i < 100)
+
 				{
+
 					i++;
+
 					outputY = 0x00;
+
 					outputX = 0xE0;
+
 				}
+
 				else
+
 				{
+
 					i = 0;
+
 					state = WIN;
+
 				}
+
 			break;
 
 		default:
@@ -1737,6 +2389,8 @@ int Output(int state)
 			state = OUT1;
 
 	}
+
+
 
 	transmit_data(outputY);
 
@@ -1754,7 +2408,11 @@ int Output(int state)
 
 
 
+
+
 int main(void) {
+
+
 
 	DDRD = 0xFF; PORTD = 0x00;
 
@@ -1764,6 +2422,8 @@ int main(void) {
 
 	DDRA = 0x00; PORTA = 0xFF;	
 
+
+
 	P1line = P2line = 2;
 
 	P1Y = 0x01; P1X = 0xF1;
@@ -1771,16 +2431,16 @@ int main(void) {
 	P2Y = 0x80; P2X = 0xF1;
 
 	BX = 0xFB; BY = 0x02;
+
 	P1WIN = P2WIN = 0;
+
 	CSPD = 0; SPIN = 0;
 
 	srand(time(0));
 
-
-
 	P1Score = P2Score = 0;
 
-	
+
 
 	unsigned short i;
 
@@ -1789,6 +2449,7 @@ int main(void) {
 	unsigned long int P1_peri = 100;
 
 	unsigned long int BALL_peri = 150;
+
 	unsigned long int BOT_peri = 100;
 
 	unsigned long int OUT_peri = 1;
@@ -1797,11 +2458,14 @@ int main(void) {
 
 	unsigned long int GCD = 1;
 
+
+
 	P1_peri = P1_peri/GCD;
 
 	BALL_peri = BALL_peri/GCD;
 
 	OUT_peri = OUT_peri/GCD;
+
 	BOT_peri = BOT_peri/GCD;
 
 
@@ -1827,6 +2491,7 @@ int main(void) {
 	task1.TickFct = &P1;
 
 
+
 	task2.state = -1;
 
 	task2.period = BALL_peri;
@@ -1834,6 +2499,7 @@ int main(void) {
 	task2.elapsedTime = BALL_peri; 
 
 	task2.TickFct = &Ball; 
+
 
 
 	task3.state = -1;
@@ -1845,6 +2511,7 @@ int main(void) {
 	task3.TickFct = &BOT; 
 
 
+
 	task4.state = -1;
 
 	task4.period = OUT_peri;
@@ -1852,8 +2519,6 @@ int main(void) {
 	task4.elapsedTime = OUT_peri; 
 
 	task4.TickFct = &Output; 
-
-    	
 
 
 
@@ -1865,17 +2530,11 @@ int main(void) {
 
     	while (1) {
 
+
+
 		randNum = rand() % 10;
-		if(CSPD)
-		{
-			task2.period = 100;
-			task2.elapsedTime = 100; 
-		}
-		else if(!CSPD)
-		{
-			task2.period = BALL_peri; // 150
-			task2.elapsedTime = BALL_peri; // 150
-		}	
+
+
 
 		for ( i = 0; i < numTasks; i++ ) 
 
@@ -1904,3 +2563,4 @@ int main(void) {
     	return 1;
 
 }
+

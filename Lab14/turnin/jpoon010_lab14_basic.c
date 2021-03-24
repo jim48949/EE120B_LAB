@@ -244,15 +244,15 @@ int BOT(int state)
 
 		case BOTGUESS:
 
-			if(Brow == 6 && direc)
+			if(Brow >= 6 && direc)
 
 			{
 
-				if(randNum > 3) // 60%
+				if(randNum > 4) // 60%
 
 				{
 
-					if(P2line < BX && P2line > 1)
+					if(P2line > Bline && P2line > 1)
 
 					{
 
@@ -262,7 +262,7 @@ int BOT(int state)
 
 					}
 
-					else if(P2line > BX && P2line < 3)
+					else if(P2line < Bline && P2line < 3)
 
 					{
 
@@ -1607,7 +1607,7 @@ int Output(int state)
 
 	tmpB = P1Score;
 
-	tmpB |= (P2Score << 2);
+	tmpB |= (P2Score << 3);
 
 	PORTB = tmpB;
 

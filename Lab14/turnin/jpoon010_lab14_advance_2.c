@@ -20,11 +20,11 @@
 #include "simAVRHeader.h"
 #endif
 
-void transmit_data(unsigned char data) 
-{
+
+
+void transmit_data(unsigned char data) {
     int i;
-    for (i = 0; i < 8 ; ++i) 
-    {
+    for (i = 0; i < 8 ; ++i) {
    	 // Sets SRCLR to 1 allowing data to be set
    	 // Also clears SRCLK in preparation of sending data
    	 PORTC = 0x08;
@@ -48,6 +48,7 @@ void A2D_init()
 	//	    analog to digital conversions.
 }
 
+
 unsigned char findX(unsigned char PL)
 {
 	unsigned char value = 0;	
@@ -66,8 +67,8 @@ unsigned char findX(unsigned char PL)
 	return value;
 }
 
-
 // Share vars
+
 unsigned char pattern;
 unsigned char row;
 unsigned char P1X, P1Y;
@@ -76,22 +77,21 @@ unsigned char BX, BY;
 unsigned char Bline, Brow;
 unsigned char CLeft, CRight;
 unsigned char P1Score, P2Score;
-unsigned char P1Moving, P2Moving, CSPD, SPIN;
+unsigned char P1Moving, P2Moving, SPIN, CSPD;
 unsigned char newRound;
 unsigned char direc;
 unsigned char P1WIN, P2WIN;
 
-
 enum P1States {P1INIT, P1WAIT, P1HOLD};
 unsigned char A0 = 0, A1 = 0;
 unsigned char P1line;  
+
 int P1(int state) 
 {
-	A0 = ~PINA & 0x01;
+	A0 = ~PINA & 0x10;
 	A1 = ~PINA & 0x02;
-				
-	switch (state) 
-	{
+					
+	switch (state) {
 		case P1INIT:
 			P1Y = 0x01; P1X = 0xF1;
 			P1line = 2;
@@ -135,8 +135,8 @@ int P1(int state)
 	}
 
         return state;
-}
 
+}
 
 enum P2States {P2INIT, P2WAIT};
 unsigned char P2line;
@@ -182,7 +182,7 @@ int P2(int state)
 }
 
 enum BOTStates {BOTINIT, BOTGUESS};
-unsigned randNum;
+unsigned char randNum;
 
 int BOT(int state)
 {
@@ -217,7 +217,7 @@ int BOT(int state)
 				{
 					P2Moving = 0;
 				}
-			}			
+			}
 
 			if(newRound)
 			{
@@ -227,12 +227,12 @@ int BOT(int state)
 		default:
 			state = BOTINIT;
 	}
-
-	return state;	
+	return state;
 }
 
 
 enum BStates {BINIT, BUPDATE, BEND}BState;
+
 unsigned char CP1[3], CP2[3];
 unsigned char SCORED;
 unsigned char A2, A3;
@@ -245,33 +245,25 @@ int Ball(int state)
 	CP2[0] = findX(P2line);	
 	CP2[1] = (CP2[0] << 1) | 0x01;
 	CP2[2] = (CP2[1] << 1) | 0x01;
-
-	A2 = ~PINA & 0x04;
 	A3 = ~PINA & 0x08;
+	A2 = ~PINA & 0x04;
 
 	switch(state)
 	{
 		case BINIT:
 			BX = 0xFB;
-			BY = 0x08;
-			if(rand()%2 == 0)
-				direc = 1; // UP
-			else
-				direc = 0;
+			BY = 0x02;
+			direc = 1; // UP
 			CLeft = 0; CRight = 0;
-			Bline = 3; Brow = 4;
+			Bline = 3; Brow = 2;
 			SCORED = 0;
-			newRound = 0;
 			CSPD = 0;
+			newRound = 0;
 			SPIN = 0;
-			if(A2)	
-			{
+			if(A2)
 				state = BUPDATE;
-			}
-			else if(!A2)
-			{
+			else
 				state = BINIT;
-			}
 			break;
 		case BUPDATE:
 			if(direc) // UP
@@ -292,8 +284,16 @@ int Ball(int state)
 							}
 							BY = BY << 1;
 							Brow++;
+							if(CSPD && Brow < 7)
+							{
+								BY = BY << 1;
+								Brow++;
+							}
+							else
+								CSPD = 0;
 							CLeft = 1;
 							CRight = 0;
+
 						}						
 						else if(Bline == 5)
 						{
@@ -303,9 +303,16 @@ int Ball(int state)
 							Bline--;
 							BY = BY << 1;
 							Brow++;
+							if(CSPD && Brow < 7)
+							{
+								BY = BY << 1;
+								Brow++;
+							}
+							else
+								CSPD = 0;
 						}
-					}
 
+					}
 					else if(Brow == 7)
 					{						
 						if(BX == CP2[0])
@@ -337,8 +344,11 @@ int Ball(int state)
 								SPIN = 0;
 							}
 						}
+
 						else if(BX == CP2[1])
+
 						{
+
 							// Hit Center
 							if(!CLeft && !CRight) // Go Straight
 							{
@@ -429,13 +439,14 @@ int Ball(int state)
 							BX = (BX >> 1) | 0x80;
 							Bline--;
 
-							if(SPIN && Bline < 5)
+							if(SPIN && Bline > 1)
 							{
 								BX = (BX >> 1) | 0x80;
 								Bline--;
 							}
 							CLeft = 0;
 							CRight = 1;
+
 						}						
 						else if(Bline == 1)
 						{
@@ -446,6 +457,13 @@ int Ball(int state)
 						}
 						BY = BY << 1;
 						Brow++;
+						if(CSPD && Brow < 7)
+						{
+							BY = BY << 1;
+							Brow++;
+						}
+						else
+							CSPD = 0;
 					}
 					else if(Brow == 7)
 					{
@@ -601,6 +619,7 @@ int Ball(int state)
 								SPIN = 0;
 							}
 						}
+
 						else if(BX == CP2[1])
 						{
 							// Hit Center
@@ -623,7 +642,6 @@ int Ball(int state)
 								CLeft = 0;
 								CRight = 1;
 							}	
-
 							SCORED = 0;
 							CSPD = 0;
 							if(P2Moving && !CLeft && !CRight)
@@ -703,6 +721,13 @@ int Ball(int state)
 							}
 							BY = BY >> 1;
 							Brow--;
+							if(CSPD && Brow > 2)
+							{
+								BY = BY >> 1;
+								Brow--;
+							}
+							else
+								CSPD = 0;
 							CLeft = 1;
 							CRight = 0;
 						}						
@@ -838,14 +863,13 @@ int Ball(int state)
 							BX = (BX >> 1) | 0x80;
 							Bline--;
 
-							if(SPIN && Bline < 5)
+							if(SPIN && Bline > 1)
 							{
 								BX = (BX >> 1) | 0x80;
 								Bline--;
 							}
 							CLeft = 0;
 							CRight = 1;
-
 						}						
 						else if(Bline == 1)
 						{
@@ -856,6 +880,13 @@ int Ball(int state)
 						}
 						BY = BY >> 1;
 						Brow--;
+						if(CSPD && Brow > 2)
+						{
+							BY = BY >> 1;
+							Brow--;
+						}
+						else
+							CSPD = 0;
 					}
 					else if(Brow == 2)
 					{
@@ -1098,6 +1129,7 @@ int Ball(int state)
 			{
 				state = BEND;
 			}
+
 			break;
 		case BEND:
 			if(A3) // Reset
@@ -1118,10 +1150,8 @@ int Ball(int state)
 		default:
 			state = BINIT;
 	}
-
 	return state;
 }
-
 
 
 enum FStates {OUT1, OUT2, OUT3, WIN, FLASH};
@@ -1196,18 +1226,17 @@ int Output(int state)
 			break;
 		case FLASH:
 			if(i < 100)
-			{
-				i++;
-				outputY = 0x00;
-				outputX = 0xE0;
-			}
-			else
-			{
-				i = 0;
-				state = WIN;
-			}
+				{
+					i++;
+					outputY = 0x00;
+					outputX = 0xE0;
+				}
+				else
+				{
+					i = 0;
+					state = WIN;
+				}
 			break;
-
 		default:
 			state = OUT1;
 	}
@@ -1220,8 +1249,9 @@ int Output(int state)
 	return state;
 }
 
-int main(void) 
-{
+
+int main(void) {
+
 	DDRD = 0xFF; PORTD = 0x00;
 	DDRC = 0xFF; PORTC = 0x00;
 	DDRB = 0xFF; PORTB = 0x00;
@@ -1235,6 +1265,7 @@ int main(void)
 	CSPD = 0; SPIN = 0;
 	srand(time(0));
 	P1Score = P2Score = 0;
+
 
 	unsigned short i;
 	// Period for the tasks
@@ -1280,22 +1311,12 @@ int main(void)
 	TimerSet(GCD);
 	TimerOn();
 
-	last = ADC;
+	last = 512;
 
     	while (1) 
 	{
 		randNum = rand() % 10;
 		JOY = ADC;
-		if(CSPD)
-		{
-			task2.period = 100;
-			task2.elapsedTime = 100; 
-		}
-		else if(!CSPD)
-		{
-			task2.period = BALL_peri; // 150
-			task2.elapsedTime = BALL_peri; // 150
-		}	
 
 		for ( i = 0; i < numTasks; i++ ) 
 		{
