@@ -1,1 +1,1 @@
-Repository for EE CS 120 B labs in UCR.
+Repository for EE/CS 120B labs in UCR.
